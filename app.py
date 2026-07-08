@@ -95,7 +95,7 @@ PAINEL_HTML = """
     </div>
 
     <div class="main-container">
-        {% if dados.aviso_drawdown %}
+        {% if dados.aviso_drawdown == 'SIM' %}
         <div class="alert-zone">🚨 OPERAÇÃO EM RISCO CRÍTICO: Drawdown flutuante muito próximo do limite máximo de exclusão diária. O módulo Mentor EA iniciará a blindagem automática caso necessário.</div>
         {% endif %}
 
@@ -108,7 +108,7 @@ PAINEL_HTML = """
                 <div class="card-label">Capital Flutuante (Equity)</div>
                 <div class="card-value">$ {{ dados.equidade }}</div>
             </div>
-            <div class="metric-card {% if dados.aviso_drawdown %}danger{% else %}success{% endif %}">
+            <div class="metric-card success">
                 <div class="card-label">Drawdown de Risco Atual</div>
                 <div class="card-value">{{ dados.drawdown }}%</div>
             </div>
@@ -158,24 +158,19 @@ def principal():
 
     conn = obter_conexao()
     cur = conn.cursor()
-    cur.execute("SELECT saldo, equidade, drawdown, to_char(data_hora, 'DD/MM/YYYY HH24:MI:SS') FROM metricas_conta ORDER BY id DESC LIMIT 1")
+    # Converte os números em texto puro (text) direto no banco para evitar conflitos no Python
+    cur.execute("SELECT saldo::text, equidade::text, drawdown::text, to_char(data_hora, 'DD/MM/YYYY HH24:MI:SS') FROM metricas_conta ORDER BY id DESC LIMIT 1")
     linha = cur.fetchone()
     cur.close()
     conn.close()
 
     if linha:
-        # Puxa cada índice numérico separadamente da tupla gerada pelo SQL
-        v_saldo = float(linha[0])
-        v_equi = float(linha[1])
-        v_dd = float(linha[2])
-        v_data = linha[3]
-        
         dados_atuais = {
-            "saldo": f"{v_saldo:,.2f}",
-            "equidade": f"{v_equi:,.2f}",
-            "drawdown": f"{v_dd:.2f}",
-            "data": v_data,
-            "aviso_drawdown": v_dd > 4.5
+            "saldo": str(linha[0]),
+            "equidade": str(linha[1]),
+            "drawdown": str(linha[2]),
+            "data": str(linha[3]),
+            "aviso_drawdown": 'SIM' if float(linha[2]) > 4.5 else 'NAO'
         }
     else:
         dados_atuais = {
@@ -183,7 +178,7 @@ def principal():
             "equidade": "0.00", 
             "drawdown": "0.00", 
             "data": "Aguardando primeiro sinal técnico do MT5...",
-            "aviso_drawdown": False
+            "aviso_drawdown": 'NAO'
         }
 
     return render_template_string(PAINEL_HTML, dados=dados_atuais)
