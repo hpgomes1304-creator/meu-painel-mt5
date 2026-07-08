@@ -10,7 +10,7 @@ SENHA_DE_ACESSO = "123456"
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-def obter_conexao():
+def obtener_conexao():
     return psycopg2.connect(DATABASE_URL)
 
 # --- TELA DE LOGIN PREMIUM (TRADER NO CORRE) ---
@@ -95,7 +95,7 @@ PAINEL_HTML = """
     </div>
 
     <div class="main-container">
-        {% if dados.drawdown > 4.5 %}
+        {% if dados.aviso_drawdown %}
         <div class="alert-zone">🚨 OPERAÇÃO EM RISCO CRÍTICO: Drawdown flutuante muito próximo do limite máximo de exclusão diária. O módulo Mentor EA iniciará a blindagem automática caso necessário.</div>
         {% endif %}
 
@@ -108,7 +108,7 @@ PAINEL_HTML = """
                 <div class="card-label">Capital Flutuante (Equity)</div>
                 <div class="card-value">$ {{ dados.equidade }}</div>
             </div>
-            <div class="metric-card {% if dados.drawdown > 3.0 %}danger{% else %}success{% endif %}">
+            <div class="metric-card.danger">
                 <div class="card-label">Drawdown de Risco Atual</div>
                 <div class="card-value">{{ dados.drawdown }}%</div>
             </div>
@@ -163,16 +163,30 @@ def principal():
     cur.close()
     conn.close()
 
+    dados_atuais = {}
     if linha:
-        # Puxa cada coluna individual do banco de dados na ordem exata
+        # Extrai cada coluna de forma limpa e separada
+        v_saldo = float(linha[0])
+        v_equi = float(linha[1])
+        v_dd = float(linha[2])
+        v_data = linha[3]
+        
         dados_atuais = {
-            "saldo": f"{linha[0]:,.2f}",
-            "equidade": f"{linha[1]:,.2f}",
-            "drawdown": f"{linha[2]:.2f}",
-            "data": linha[3]
+            "saldo": f"{v_saldo:,.2f}",
+            "equidade": f"{v_equi:,.2f}",
+            "drawdown": f"{v_dd:.2f}",
+            "data": v_data,
+            "aviso_drawdown": v_dd > 4.5
         }
     else:
-        dados_atuais = {"saldo": "0.00", "equidade": "0.00", "drawdown": "0.00", "data": "Aguardando primeiro sinal técnico..."}
+        # Se o MT5 ainda não mandou nada, exibe valores zerados padrão de segurança
+        dados_atuais = {
+            "saldo": "0.00", 
+            "equidade": "0.00", 
+            "drawdown": "0.00", 
+            "data": "Aguardando primeiro sinal técnico do MT5...",
+            "aviso_drawdown": False
+        }
 
     return render_template_string(PAINEL_HTML, dados=dados_atuais)
 
