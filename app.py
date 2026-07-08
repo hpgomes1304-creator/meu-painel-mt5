@@ -12,11 +12,13 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 def obter_conexao():
     return psycopg2.connect(DATABASE_URL)
 
+# --- SISTEMA AUTOCORREÇÃO: CRIA AS COLUNAS SE ELAS NÃO EXISTIREM ---
 def ajustar_banco():
     try:
         conn = obter_conexao()
         cur = conn.cursor()
         cur.execute("ALTER TABLE metricas_conta ADD COLUMN IF NOT EXISTS conta VARCHAR(50) DEFAULT 'Padrão';")
+        cur.execute("ALTER TABLE metricas_conta ADD COLUMN IF NOT EXISTS servidor VARCHAR(100) DEFAULT 'Desconhecido';")
         conn.commit()
         cur.close()
         conn.close()
@@ -32,7 +34,7 @@ TELA_LOGIN_HTML = """
     <title>Trader no Corre - Autenticação</title>
     <style>
         body { background: linear-gradient(135deg, #070c14 0%, #0d1527 100%); color: #ffffff; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-container { background-color: #111c30; padding: 45px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); text-align: center; width: 340px; border: 1px solid #1a2b49; }
+        .login-container { background-color: #111c30; padding: 45px; border-radius: 12px; text-align: center; width: 340px; border: 1px solid #1a2b49; }
         .brand { font-size: 28px; font-weight: 800; margin-bottom: 5px; }
         .sub-brand { color: #00e676; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px; }
         input[type="password"] { width: 100%; padding: 14px; border: 1px solid #1f365c; border-radius: 6px; background-color: #070c14; color: white; box-sizing: border-box; font-size: 16px; margin-bottom: 25px; }
@@ -52,7 +54,7 @@ TELA_LOGIN_HTML = """
 </html>
 """
 
-# --- TELA DE SELEÇÃO DE CONTAS ---
+# --- TELA DE SELEÇÃO DE CONTAS (ESTILO LISTA FTMO ORIGINAL) ---
 TELA_SELECAO_HTML = """
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -67,17 +69,17 @@ TELA_SELECAO_HTML = """
         .main-container { max-width: 1000px; margin: 50px auto; padding: 0 20px; }
         h2 { font-size: 24px; font-weight: 700; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
         .ponto-verde { width: 10px; height: 10px; background-color: #00e676; border-radius: 50%; display: inline-block; }
-        .account-card { background-color: #0d1527; border: 1px solid #1a2b49; border-radius: 8px; padding: 25px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .account-card { background-color: #0d1527; border: 1px solid #1a2b49; border-radius: 8px; padding: 25px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
         .account-details { display: flex; flex-direction: column; gap: 8px; }
-        .acc-type { background-color: rgba(0, 230, 118, 0.1); border: 1px solid #00e676; color: #00e676; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; display: inline-block; width: fit-content; text-transform: uppercase; }
+        .acc-type { background-color: rgba(0, 230, 118, 0.1); border: 1px solid #00e676; color: #00e676; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
         .acc-number { font-size: 20px; font-weight: 700; color: #ffffff; margin-top: 5px; }
         .acc-metrics { color: #7f8c8d; font-size: 14px; margin-top: 5px; }
         .acc-metrics b { color: #ffffff; font-family: monospace; }
-        .btn-detalhe { background-color: #12223d; border: 1px solid #203a61; color: #ffffff; padding: 12px 24px; border-radius: 6px; font-weight: 600; text-decoration: none; cursor: pointer; transition: 0.3s; }
+        .btn-detalhe { background-color: #12223d; border: 1px solid #203a61; color: #ffffff; padding: 12px 24px; border-radius: 6px; font-weight: 600; text-decoration: none; transition: 0.3s; }
         .btn-detalhe:hover { background-color: #00e676; color: #070c14; border-color: #00e676; }
         .no-data { text-align: center; color: #7f8c8d; padding: 40px; border: 1px dashed #1a2b49; border-radius: 8px; }
     </style>
-    <script> setTimeout(function(){ location.reload(); }, 6000); </script>
+    <script> setTimeout(function(){ location.reload(); }, 5000); </script>
 </head>
 <body>
     <div class="navbar">
@@ -85,33 +87,33 @@ TELA_SELECAO_HTML = """
         <a href="/logout" style="color: #ff5252; text-decoration: none; font-weight: 600;">Sair</a>
     </div>
     <div class="main-container">
-        <h2><span class="ponto-verde"></span> Contas Ativas</h2>
+        <h2><span class="ponto-verde"></span> Contas Identificadas</h2>
         {% if contas %}
             {% for c in contas %}
             <div class="account-card">
                 <div class="account-details">
                     <div>
-                        <span class="acc-type">Em andamento</span>
-                        <span class="acc-type" style="background-color:rgba(32,148,250,0.1); border-color:#2094fa; color:#2094fa; margin-left:5px;">FTMO Challenge</span>
+                        <span class="acc-type">Broker: {{ c.servidor }}</span>
+                        <span class="acc-type" style="background-color:rgba(32,148,250,0.1); border-color:#2094fa; color:#2094fa; margin-left:5px;">MT5 Connected</span>
                     </div>
-                    <div class="acc-number">2-Step: {{ c.conta }}</div>
+                    <div class="acc-number">ID: {{ c.conta }}</div>
                     <div class="acc-metrics">
-                        Balance: <b>$ {{ c.saldo }}</b> &nbsp;|&nbsp; Estado: <span style="color:#00e676; font-weight:600;">Ativo</span>
+                        Balance: <b>$ {{ c.saldo }}</b> &nbsp;|&nbsp; Equity: <b>$ {{ c.equidade }}</b>
                     </div>
                 </div>
                 <div>
-                    <a href="/dashboard/{{ c.conta }}" class="btn-detalhe">Detalhe &gt;</a>
+                    <a href="/dashboard/{{ c.conta }}" class="btn-detalhe">Análise Metrix &gt;</a>
                 </div>
             </div>
             {% endfor %}
         {% else %}
-            <div class="no-data">Nenhuma conta enviando telemetria ativa no momento. Ligue o robô no MT5.</div>
+            <div class="no-data">Nenhuma conta ou corretora enviando telemetria ativa. Jogue o robô no gráfico.</div>
         {% endif %}
     </div>
 </body>
 </html>
 """
-# --- NOVO PAINEL DE MÉTRICAS INTERNAS AVANÇADAS ---
+# --- PAINEL DE MÉTRICAS INTERNAS AVANÇADAS (ESTILO COMPLETO DA IMAGEM) ---
 TELA_DASHBOARD_HTML = """
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -157,7 +159,7 @@ TELA_DASHBOARD_HTML = """
 <body>
     <div class="navbar">
         <a href="/" class="nav-logo">TRADER<span>NO_CORRE</span></a>
-        <span style="color: #7f8c8d; font-size: 14px;">Painel: <b style="color:#ffffff;">Conta {{ conta }}</b></span>
+        <span style="color: #7f8c8d; font-size: 14px;">Servidor: <b style="color:#ffffff;">{{ servidor }}</b></span>
     </div>
     <div class="main-container">
         <div class="topo-layout">
@@ -172,7 +174,7 @@ TELA_DASHBOARD_HTML = """
             <div class="secao-bloco">
                 <div class="titulo-bloco">Objetivos de Trading</div>
                 <table class="tab-objetivos">
-                    <thead><tr><th>Objetivos</th><th>Resultado</th><th style="text-align:right;">Resumo</th></tr></thead>
+                    <thead><tr><th>Objetivos de Trading</th><th>Resultado</th><th style="text-align:right;">Resumo</th></tr></thead>
                     <tbody>
                         <tr><td class="obj-nome">4 Dias Mínimos de Trading</td><td>13</td><td align="right"><div class="check-ok">✓</div></td></tr>
                         <tr><td class="obj-nome">Perda Máxima Diária: -$500</td><td class="val-preju">$ {{ dados.perda_diaria }}</td><td align="right"><div class="check-ok">✓</div></td></tr>
@@ -196,9 +198,9 @@ TELA_DASHBOARD_HTML = """
                     <div class="est-item"><div class="est-lbl">Rácio de ganhos</div><div class="est-val" style="color:#00e676;">48.81 %</div></div>
                     <div class="est-item"><div class="est-lbl">Média de lucros</div><div class="est-val" style="color:#00e676;">$ 25.72</div></div>
                     <div class="est-item"><div class="est-lbl">Prejuízo médio</div><div class="est-val" style="color:#ff5252;">-$ 33.95</div></div>
-                    <div class="est-item"><div class="est-lbl">Trades</div><div class="est-val">168</div></div>
+                    <div class="est-item"><div class="est-lbl">Number of trades</div><div class="est-val">168</div></div>
                     <div class="est-item"><div class="est-lbl">Lots</div><div class="est-val">160.92</div></div>
-                    <div class="est-item"><div class="est-lbl">Sharpe</div><div class="est-val" style="color:#ff5252;">-0.51</div></div>
+                    <div class="est-item"><div class="est-lbl">Rácio de Sharpe</div><div class="est-val" style="color:#ff5252;">-0.51</div></div>
                 </div>
             </div>
             <div class="secao-bloco">
@@ -218,17 +220,24 @@ TELA_DASHBOARD_HTML = """
 </body>
 </html>
 """
+
+# --- INGESTÃO DE SINAL ---
 @app.route('/atualizar-dados', methods=['POST'])
 def atualizar_dados():
     try:
         dados = request.get_json(force=True)
         conta = str(dados.get('conta', 'Padrão'))
+        servidor = str(dados.get('servidor', 'Desconhecido'))
         saldo = float(dados.get('saldo', 0.0))
         equidade = float(dados.get('equidade', 0.0))
         drawdown = float(dados.get('drawdown', 0.0))
+        
         conn = obter_conexao()
         cur = conn.cursor()
-        cur.execute("INSERT INTO metricas_conta (saldo, equidade, drawdown, conta) VALUES (%s, %s, %s, %s)", (saldo, equidade, drawdown, conta))
+        cur.execute(
+            "INSERT INTO metricas_conta (saldo, equidade, drawdown, conta, servidor) VALUES (%s, %s, %s, %s, %s)",
+            (saldo, equidade, drawdown, conta, servidor)
+        )
         conn.commit()
         cur.close()
         conn.close()
@@ -236,6 +245,7 @@ def atualizar_dados():
     except:
         return jsonify({"status": "erro"}), 400
 
+# --- INTERFACE: CONTAS ATIVAS ---
 @app.route('/', methods=['GET', 'POST'])
 def principal():
     if request.method == 'POST':
@@ -243,52 +253,21 @@ def principal():
             session['logado'] = True
             return redirect('/')
         else:
-            return render_template_string(TELA_LOGIN_HTML, erro="Incorreta.")
-    if not session.get('logado'): return render_template_string(TELA_LOGIN_HTML, erro=None)
+            return render_template_string(TELA_LOGIN_HTML, erro="Senha Inválida.")
+
+    if not session.get('logado'):
+        return render_template_string(TELA_LOGIN_HTML, erro=None)
+
     lista_contas = []
     try:
         conn = obter_conexao()
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT DISTINCT ON (conta) conta, saldo, equidade FROM metricas_conta WHERE conta != 'Padrão' ORDER BY conta, id DESC")
+        cur.execute("""
+            SELECT DISTINCT ON (conta) conta, servidor, saldo, equidade 
+            FROM metricas_conta 
+            WHERE conta != 'Padrão'
+            ORDER BY conta, id DESC
+        """)
         linhas = cur.fetchall()
-        cur.close()
-        conn.close()
-        for l in linhas:
-            lista_contas.append({"conta": l['conta'], "saldo": f"{float(l['saldo']):,.2f}", "equidade": f"{float(l['equidade']):,.2f}"})
-    except: pass
-    return render_template_string(TELA_SELECAO_HTML, contas=lista_contas)
-
-@app.route('/dashboard/<numero_conta>')
-def dashboard_individual(numero_conta):
-    if not session.get('logado'): return redirect('/')
-    dados_finais = {"saldo": "0.00", "equidade": "0.00", "drawdown": "0.00", "perda_diaria": "0.00", "perda_maxima": "0.00", "lucro_hoje": "0.00"}
-    try:
-        conn = obter_conexao()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT saldo, equidade, drawdown FROM metricas_conta WHERE conta = %s ORDER BY id DESC LIMIT 1", (numero_conta,))
-        linha = cur.fetchone()
-        cur.close()
-        conn.close()
-        if linha:
-            v_saldo = float(linha['saldo'])
-            v_equi = float(linha['equidade'])
-            v_dd = float(linha['drawdown'])
-            v_perda = v_saldo - v_equi
-            if v_perda < 0: v_perda = 0.0
-            dados_finais = {
-                "saldo": f"{v_saldo:,.2f}", "equidade": f"{v_equi:,.2f}", "drawdown": f"{v_dd:.2f}",
-                "perda_diaria": f"-{v_perda:.2f}" if v_perda > 0 else "0.00",
-                "perda_maxima": f"-{v_perda:.2f}" if v_perda > 0 else "0.00",
-                "lucro_hoje": f"-{v_perda:.2f}" if v_perda > 0 else "0.00"
-            }
-    except: pass
-    return render_template_string(TELA_DASHBOARD_HTML, conta=numero_conta, dados=dados_finais)
-
-@app.route('/logout')
-def logout():
-    session.pop('logado', None)
-    return redirect('/')
-
-if __name__ == '__main__':
-    ajustar_banco()
-    app.run(debug=True)
+        cur.close() conn.close()
+        for l in linhas:lista_contas.append({"conta": l['conta'],"servidor": l['servidor'],"saldo": f"{float(l['saldo']):,.2f}","equidade": f"{float(l['equidade']):,.2f}"})except:passreturn render_template_string(TELA_SELECAO_HTML, contas=lista_contas)--- INTERFACE: MÉTRICAS INTERNAS POR CONTA ---@app.route('/dashboard/<numero_conta>')def dashboard_individual(numero_conta):if not session.get('logado'): return redirect('/')dados_finais = {"saldo": "0.00", "equidade": "0.00", "drawdown": "0.00","perda_diaria": "0.00", "perda_maxima": "0.00", "lucro_hoje": "0.00"}nome_servidor = "Desconhecido"try:conn = obter_conexao()cur = conn.cursor(cursor_factory=RealDictCursor)cur.execute("SELECT saldo, equidade, drawdown, servidor FROM metricas_conta WHERE conta = %s ORDER BY id DESC LIMIT 1", (numero_conta,))linha = cur.fetchone()cur.close()conn.close()if linha:v_saldo = float(linha['saldo'])v_equi = float(linha['equidade'])v_dd = float(linha['drawdown'])nome_servidor = str(linha['servidor'])v_perda = v_saldo - v_equiif v_perda < 0: v_perda = 0.0dados_finais = {"saldo": f"{v_saldo:,.2f}","equidade": f"{v_equi:,.2f}","drawdown": f"{v_dd:.2f}","perda_diaria": f"-{v_perda:.2f}" if v_perda > 0 else "0.00","perda_maxima": f"-{v_perda:.2f}" if v_perda > 0 else "0.00","lucro_hoje": f"-{v_perda:.2f}" if v_perda > 0 else "0.00"}except:passreturn render_template_string(TELA_DASHBOARD_HTML, conta=numero_conta, servidor=nome_servidor, dados=dados_finais)@app.route('/logout')def logout():session.pop('logado', None)return redirect('/')if name == 'main':ajustar_banco()app.run(debug=True)
