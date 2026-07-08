@@ -1,9 +1,9 @@
-from flask import Flask, request, jsonify, render_template_string, session, redirect, url_value_preprocessor
+from flask import Flask, request, jsonify, render_template_string, session, redirect
 import os
 import psycopg2
 
 app = Flask(__name__)
-# Chave de segurança para proteger o seu login (pode deixar como está)
+# Chave de segurança para proteger o seu login
 app.secret_key = "chave_secreta_super_segura_ftmo"
 
 # Senha que você vai usar para entrar no seu site (Altere se quiser!)
@@ -63,8 +63,7 @@ PAINEL_HTML = """
         .card-valor { font-size: 28px; font-weight: bold; }
         .alerta { background-color: #ff5252; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; text-align: center; }
     </style>
-    <meta float-content="no-cache">
-    <script> setTimeout(function(){ location.reload(); }, 10000); </script> <!-- Atualiza a tela sozinho a cada 10 segundos -->
+    <script> setTimeout(function(){ location.reload(); }, 10000); </script>
 </head>
 <body>
     <div class="header">
@@ -96,7 +95,7 @@ PAINEL_HTML = """
 
     <div class="card" style="border-left-color: #00e676;">
         <div class="card-titulo">Última Atualização do Servidor</div>
-        <div style="font-size: 16px; margin-top: 5px; color: #00e676;">{{ dados.data }} (Horário Global GMT)</div>
+        <div style="font-size: 16px; margin-top: 5px; color: #00e676;">{{ dados.data }}</div>
     </div>
 </body>
 </html>
@@ -124,7 +123,6 @@ def atualizar_dados():
 
 @app.route('/', methods=['GET', 'POST'])
 def principal():
-    # Se o usuário tentar logar
     if request.method == 'POST':
         senha_digitada = request.form.get('senha')
         if senha_digitada == SENHA_DE_ACESSO:
@@ -133,11 +131,9 @@ def principal():
         else:
             return render_template_string(TELA_LOGIN_HTML, erro="Senha incorreta! Tente novamente.")
 
-    # Se não estiver logado, mostra a tela de login
     if not session.get('logado'):
         return render_template_string(TELA_LOGIN_HTML, erro=None)
 
-    # Se estiver logado, busca o último dado gravado no cofre Postgres
     conn = obter_conexao()
     cur = conn.cursor()
     cur.execute("SELECT saldo, equidade, drawdown, data_hora FROM metricas_conta ORDER BY id DESC LIMIT 1")
@@ -146,7 +142,7 @@ def principal():
     conn.close()
 
     if linha:
-        dados_atuais = {"saldo": linha[0], "equidade": linha[1], "drawdown": linha[2], "data": linha[3]}
+        dados_atuais = {"saldo": str(linha[0]), "equidade": str(linha[1]), "drawdown": str(linha[2]), "data": str(linha[3])}
     else:
         dados_atuais = {"saldo": "0.00", "equidade": "0.00", "drawdown": "0.00", "data": "Sem dados enviados ainda"}
 
