@@ -5,7 +5,7 @@ import psycopg2
 app = Flask(__name__)
 app.secret_key = "chave_secreta_super_segura_trader_no_corre"
 
-# Defina a sua senha mestre para acessar o painel aqui
+# Senha padrão de acesso ao seu painel
 SENHA_DE_ACESSO = "123456"
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -13,7 +13,7 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 def obter_conexao():
     return psycopg2.connect(DATABASE_URL)
 
-# --- TELA DE LOGIN PREMIUM (TRADER NO CORRE) ---
+# --- TELA DE LOGIN PREMIUM ---
 TELA_LOGIN_HTML = """
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -21,14 +21,13 @@ TELA_LOGIN_HTML = """
     <meta charset="UTF-8">
     <title>Trader no Corre - Autenticação</title>
     <style>
-        body { background: linear-gradient(135deg, #070c14 0%, #0d1527 100%); color: #ffffff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        body { background: linear-gradient(135deg, #070c14 0%, #0d1527 100%); color: #ffffff; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .login-container { background-color: #111c30; padding: 45px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.6); text-align: center; width: 340px; border: 1px solid #1a2b49; }
-        .brand { font-size: 28px; font-weight: 800; letter-spacing: 1px; margin-bottom: 5px; color: #ffffff; }
+        .brand { font-size: 28px; font-weight: 800; margin-bottom: 5px; }
         .sub-brand { color: #00e676; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 30px; }
-        input[type="password"] { width: 100%; padding: 14px; border: 1px solid #1f365c; border-radius: 6px; background-color: #070c14; color: white; box-sizing: border-box; font-size: 16px; margin-bottom: 25px; transition: 0.3s; }
-        input[type="password"]:focus { border-color: #00e676; outline: none; }
-        button { background: linear-gradient(90deg, #00e676 0%, #00b359 100%); color: #070c14; border: none; padding: 14px; width: 100%; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 16px; text-transform: uppercase; }
-        .erro-msg { color: #ff5252; background-color: rgba(255,82,82,0.1); padding: 10px; border-radius: 4px; margin-bottom: 20px; font-size: 14px; }
+        input[type="password"] { width: 100%; padding: 14px; border: 1px solid #1f365c; border-radius: 6px; background-color: #070c14; color: white; box-sizing: border-box; font-size: 16px; margin-bottom: 25px; }
+        button { background: linear-gradient(90deg, #00e676 0%, #00b359 100%); color: #070c14; border: none; padding: 14px; width: 100%; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 16px; text-transform: uppercase; width: 100%; }
+        .erro-msg { color: #ff5252; background-color: rgba(255,82,82,0.1); padding: 10px; border-radius: 4px; margin-bottom: 20px; }
     </style>
 </head>
 <body>
@@ -45,7 +44,7 @@ TELA_LOGIN_HTML = """
 </html>
 """
 
-# --- DASHBOARD PREMIUM (ESTILO ORIGINAL PROP FIRM) ---
+# --- DASHBOARD TRADER NO CORRE ---
 PAINEL_HTML = """
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -59,98 +58,87 @@ PAINEL_HTML = """
         .nav-logo span { color: #00e676; }
         .badge { background-color: rgba(0, 230, 118, 0.1); border: 1px solid #00e676; color: #00e676; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; }
         .logout-btn { color: #ff5252; text-decoration: none; font-size: 14px; font-weight: 600; }
-        
         .main-container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
-        .alert-zone { background: linear-gradient(90deg, #ff5252 0%, #b33636 100%); color: white; padding: 18px 25px; border-radius: 8px; margin-bottom: 30px; font-weight: 600; }
-        
         .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 40px; }
-        .metric-card { background-color: #0d1527; border: 1px solid #1a2b49; border-radius: 10px; padding: 25px; border-left: 4px solid #1f365c; }
-        .metric-card.success { border-left-color: #00e676; }
-        .metric-card.danger { border-left-color: #ff5252; }
-        
+        .metric-card { background-color: #0d1527; border: 1px solid #1a2b49; border-radius: 10px; padding: 25px; border-left: 4px solid #00e676; }
         .card-label { color: #7f8c8d; font-size: 13px; font-weight: 600; text-transform: uppercase; margin-bottom: 12px; }
         .card-value { font-size: 32px; font-weight: 700; color: #ffffff; font-family: monospace; }
-        
         .footer-card { background-color: #0d1527; border: 1px solid #1a2b49; border-radius: 10px; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }
         .footer-text { color: #7f8c8d; font-size: 13px; }
         .footer-time { color: #00e676; font-weight: 600; font-size: 14px; }
     </style>
-    <script> setTimeout(function(){ location.reload(); }, 5000); </script>
+    <script> setTimeout(function(){ location.reload(); }, 5000); </script> <!-- Atualiza a tela a cada 5 segundos -->
 </head>
 <body>
     <div class="navbar">
         <div class="nav-logo">TRADER<span>NO_CORRE</span></div>
         <div style="display: flex; align-items: center; gap: 20px;">
-            <div class="badge">Matrix Link Active</div>
-            <a href="/logout" class="logout-btn">Desconectar</a>
+            <div class="badge">Sinal Online</div>
+            <a href="/logout" class="logout-btn">Sair</a>
         </div>
     </div>
-
     <div class="main-container">
-        {% if dados.aviso_drawdown == 'SIM' %}
-        <div class="alert-zone">🚨 OPERAÇÃO EM RISCO CRÍTICO: Drawdown flutuante próximo do limite diário. O módulo Mentor EA iniciará a blindagem automática caso necessário.</div>
-        {% endif %}
-
         <div class="metrics-grid">
-            <div class="metric-card success">
+            <div class="metric-card">
                 <div class="card-label">Saldo de Conta (Balance)</div>
                 <div class="card-value">$ {{ dados.saldo }}</div>
             </div>
-            <div class="metric-card success">
+            <div class="metric-card">
                 <div class="card-label">Capital Flutuante (Equity)</div>
                 <div class="card-value">$ {{ dados.equidade }}</div>
             </div>
-            <div class="metric-card {% if dados.aviso_drawdown == 'SIM' %}danger{% else %}success{% endif %}">
-                <div class="card-label">Drawdown de Risco Atual</div>
-                <div class="card-value">{{ dados.drawdown }}%</div>
+            <div class="metric-card">
+                <div class="card-label">Drawdown Atual</div>
+                <div class="card-value">{{ dados.drawdown }} %</div>
             </div>
         </div>
-
         <div class="footer-card">
-            <div class="footer-text">Sincronização de telemetria MetaTrader 5 (MT5 Gateway)</div>
-            <div class="footer-time">Telemetria: {{ dados.data }}</div>
+            <div class="footer-text">Gateway de Transmissão MetaTrader 5 Ativo</div>
+            <div class="footer-time">Último Sinal: {{ dados.data }}</div>
         </div>
     </div>
 </body>
 </html>
 """
 
-# --- ROTAS INTERNAS ---
-
+# --- ENTRADA DE DADOS SIMPLIFICADA (EVITA BLOQUEIOS DO RENDER) ---
 @app.route('/atualizar-dados', methods=['POST'])
 def atualizar_dados():
-    dados = request.get_json()
-    saldo = float(dados.get('saldo', 0))
-    equidade = float(dados.get('equidade', 0))
-    drawdown = float(dados.get('drawdown', 0))
-    
-    conn = obter_conexao()
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO metricas_conta (saldo, equidade, drawdown) VALUES (%s, %s, %s)",
-        (saldo, equidade, drawdown)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
-    return jsonify({"status": "sucesso"}), 200
+    try:
+        dados = request.get_json(force=True)
+        # Força os dados a virarem floats puros antes de salvar no Postgres
+        saldo = float(dados.get('saldo', 0.0))
+        equidade = float(dados.get('equidade', 0.0))
+        drawdown = float(dados.get('drawdown', 0.0))
+        
+        conn = obter_conexao()
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO metricas_conta (saldo, equidade, drawdown) VALUES (%s, %s, %s)",
+            (saldo, equidade, drawdown)
+        )
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"status": "sucesso"}), 200
+    except Exception as e:
+        return jsonify({"status": "erro", "detalhes": str(e)}), 400
 
 @app.route('/', methods=['GET', 'POST'])
 def principal():
     if request.method == 'POST':
-        senha_digitada = request.form.get('senha')
-        if senha_digitada == SENHA_DE_ACESSO:
+        if request.form.get('senha') == SENHA_DE_ACESSO:
             session['logado'] = True
             return redirect('/')
         else:
-            return render_template_string(TELA_LOGIN_HTML, erro="Senha inválida para este terminal.")
+            return render_template_string(TELA_LOGIN_HTML, erro="Chave de acesso incorreta.")
 
     if not session.get('logado'):
         return render_template_string(TELA_LOGIN_HTML, erro=None)
 
     dados_atuais = {
         "saldo": "0.00", "equidade": "0.00", "drawdown": "0.00",
-        "data": "Aguardando transmissão do MT5...", "aviso_drawdown": 'NAO'
+        "data": "Aguardando primeiro pulso do robô MT5..."
     }
 
     try:
@@ -162,20 +150,14 @@ def principal():
         conn.close()
 
         if linha:
-            v_saldo = float(linha[0])
-            v_equi = float(linha[1])
-            v_dd = float(linha[2])
-            v_data = str(linha[3])
-            
             dados_atuais = {
-                "saldo": f"{v_saldo:,.2f}",
-                "equidade": f"{v_equi:,.2f}",
-                "drawdown": f"{v_dd:.2f}",
-                "data": v_data,
-                "aviso_drawdown": 'SIM' if v_dd > 4.5 else 'NAO'
+                "saldo": f"{float(linha[0]):,.2f}",
+                "equidade": f"{float(linha[1]):,.2f}",
+                "drawdown": f"{float(linha[2]):.2f}",
+                "data": str(linha[3])
             }
     except Exception as e:
-        dados_atuais["data"] = "Sincronizando tabelas..."
+        dados_atuais["data"] = "Conectando ao banco de dados..."
 
     return render_template_string(PAINEL_HTML, dados=dados_atuais)
 
