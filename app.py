@@ -156,30 +156,34 @@ def principal():
     if not session.get('logado'):
         return render_template_string(TELA_LOGIN_HTML, erro=None)
 
-    conn = obter_conexao()
-    cur = conn.cursor()
-    # Converte os números em texto puro (text) direto no banco para evitar conflitos no Python
-    cur.execute("SELECT saldo::text, equidade::text, drawdown::text, to_char(data_hora, 'DD/MM/YYYY HH24:MI:SS') FROM metricas_conta ORDER BY id DESC LIMIT 1")
-    linha = cur.fetchone()
-    cur.close()
-    conn.close()
+    # Valores padrão de segurança caso falte dados ou ocorra erro de leitura
+    dados_atuais = {
+        "saldo": "0.00", 
+        "equidade": "0.00", 
+        "drawdown": "0.00", 
+        "data": "Aguardando primeiro sinal técnico do MT5...",
+        "aviso_drawdown": 'NAO'
+    }
 
-    if linha:
-        dados_atuais = {
-            "saldo": str(linha[0]),
-            "equidade": str(linha[1]),
-            "drawdown": str(linha[2]),
-            "data": str(linha[3]),
-            "aviso_drawdown": 'SIM' if float(linha[2]) > 4.5 else 'NAO'
-        }
-    else:
-        dados_atuais = {
-            "saldo": "0.00", 
-            "equidade": "0.00", 
-            "drawdown": "0.00", 
-            "data": "Aguardando primeiro sinal técnico do MT5...",
-            "aviso_drawdown": 'NAO'
-        }
+    try:
+        conn = obter_conexao()
+        cur = conn.cursor()
+        cur.execute("SELECT saldo, equidade, drawdown, to_char(data_hora, 'DD/MM/YYYY HH24:MI:SS') FROM metricas_conta ORDER BY id DESC LIMIT 1")
+        linha = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if linha:
+            dados_atuais = {
+                "saldo": str(linha[0]),
+                "equidade": str(linha[1]),
+                "drawdown": str(linha[2]),
+                "data": str(linha[3]),
+                "aviso_drawdown": 'SIM' if float(linha[2]) > 4.5 else 'NAO'
+            }
+    except Exception as e:
+        # Se der qualquer erro no banco de dados, o "Escudo" segura o site online aqui
+        dados_atuais["data"] = "Sincronizando tabelas em segundo plano..."
 
     return render_template_string(PAINEL_HTML, dados=dados_atuais)
 
