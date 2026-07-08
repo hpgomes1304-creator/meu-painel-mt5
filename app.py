@@ -1,13 +1,12 @@
 from flask import Flask, request, jsonify, render_template_string, session, redirect
 import os
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 app.secret_key = "chave_secreta_super_segura_trader_no_corre"
 
-# Senha padrão de acesso ao seu painel
 SENHA_DE_ACESSO = "123456"
-
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 def obter_conexao():
@@ -67,7 +66,7 @@ PAINEL_HTML = """
         .footer-text { color: #7f8c8d; font-size: 13px; }
         .footer-time { color: #00e676; font-weight: 600; font-size: 14px; }
     </style>
-    <script> setTimeout(function(){ location.reload(); }, 5000); </script>
+    <script> setTimeout(function(){ location.reload(); }, 4000); </script>
 </head>
 <body>
     <div class="navbar">
@@ -94,7 +93,7 @@ PAINEL_HTML = """
         </div>
         <div class="footer-card">
             <div class="footer-text">Gateway de Transmissão MetaTrader 5 Ativo</div>
-            <div class="footer-time">Última Transmissão: {{ dados.data }}</div>
+            <div class="footer-time">Telemetria: {{ dados.data }}</div>
         </div>
     </div>
 </body>
@@ -136,27 +135,27 @@ def principal():
 
     dados_atuais = {
         "saldo": "0.00", "equidade": "0.00", "drawdown": "0.00",
-        "data": "Aguardando pulso inicial do MT5..."
+        "data": "Sincronizando tabelas com o MT5..."
     }
 
     try:
         conn = obter_conexao()
-        cur = conn.cursor()
-        cur.execute("SELECT saldo, equidade, drawdown, to_char(data_hora, 'DD/MM HH24:MI:SS') FROM metricas_conta ORDER BY id DESC LIMIT 1")
+        # Usa o DictCursor para puxar os nomes das colunas de forma exata e nominal
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT saldo, equidade, drawdown, to_char(data_hora, 'DD/MM HH24:MI:SS') as data_formatada FROM metricas_conta ORDER BY id DESC LIMIT 1")
         linha = cur.fetchone()
         cur.close()
         conn.close()
 
         if linha:
-            # Separa os dados por coluna de forma cirúrgica
             dados_atuais = {
-                "saldo": f"{float(linha[0]):,.2f}",
-                "equidade": f"{float(linha[1]):,.2f}",
-                "drawdown": f"{float(linha[2]):.2f}",
-                "data": str(linha[3])
+                "saldo": f"{float(linha['saldo']):,.2f}",
+                "equidade": f"{float(linha['equidade']):,.2f}",
+                "drawdown": f"{float(linha['drawdown']):.2f}",
+                "data": str(linha['data_formatada'])
             }
     except Exception as e:
-        dados_atuais["data"] = "Sincronizando banco de dados..."
+        dados_atuais["data"] = "Conectando ao banco de dados..."
 
     return render_template_string(PAINEL_HTML, dados=dados_atuais)
 
