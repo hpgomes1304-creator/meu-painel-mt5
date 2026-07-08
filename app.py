@@ -5,7 +5,7 @@ import psycopg2
 app = Flask(__name__)
 app.secret_key = "chave_secreta_super_segura_trader_no_corre"
 
-# Senha padrão de acesso ao seu painel /atualizar-dados 
+# Senha padrão de acesso ao seu painel
 SENHA_DE_ACESSO = "123456"
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
@@ -67,7 +67,7 @@ PAINEL_HTML = """
         .footer-text { color: #7f8c8d; font-size: 13px; }
         .footer-time { color: #00e676; font-weight: 600; font-size: 14px; }
     </style>
-    <script> setTimeout(function(){ location.reload(); }, 5000); </script> <!-- Atualiza a tela a cada 5 segundos -->
+    <script> setTimeout(function(){ location.reload(); }, 5000); </script>
 </head>
 <body>
     <div class="navbar">
@@ -88,25 +88,23 @@ PAINEL_HTML = """
                 <div class="card-value">$ {{ dados.equidade }}</div>
             </div>
             <div class="metric-card">
-                <div class="card-label">Drawdown Atual</div>
+                <div class="card-label">Drawdown de Risco</div>
                 <div class="card-value">{{ dados.drawdown }} %</div>
             </div>
         </div>
         <div class="footer-card">
             <div class="footer-text">Gateway de Transmissão MetaTrader 5 Ativo</div>
-            <div class="footer-time">Último Sinal: {{ dados.data }}</div>
+            <div class="footer-time">Última Transmissão: {{ dados.data }}</div>
         </div>
     </div>
 </body>
 </html>
 """
 
-# --- ENTRADA DE DADOS SIMPLIFICADA (EVITA BLOQUEIOS DO RENDER) ---
 @app.route('/atualizar-dados', methods=['POST'])
 def atualizar_dados():
     try:
         dados = request.get_json(force=True)
-        # Força os dados a virarem floats puros antes de salvar no Postgres
         saldo = float(dados.get('saldo', 0.0))
         equidade = float(dados.get('equidade', 0.0))
         drawdown = float(dados.get('drawdown', 0.0))
@@ -138,7 +136,7 @@ def principal():
 
     dados_atuais = {
         "saldo": "0.00", "equidade": "0.00", "drawdown": "0.00",
-        "data": "Aguardando primeiro pulso do robô MT5..."
+        "data": "Aguardando pulso inicial do MT5..."
     }
 
     try:
@@ -150,6 +148,7 @@ def principal():
         conn.close()
 
         if linha:
+            # Separa os dados por coluna de forma cirúrgica
             dados_atuais = {
                 "saldo": f"{float(linha[0]):,.2f}",
                 "equidade": f"{float(linha[1]):,.2f}",
@@ -157,7 +156,7 @@ def principal():
                 "data": str(linha[3])
             }
     except Exception as e:
-        dados_atuais["data"] = "Conectando ao banco de dados..."
+        dados_atuais["data"] = "Sincronizando banco de dados..."
 
     return render_template_string(PAINEL_HTML, dados=dados_atuais)
 
