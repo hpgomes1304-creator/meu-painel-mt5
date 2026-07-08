@@ -5,7 +5,7 @@ import psycopg2
 app = Flask(__name__)
 app.secret_key = "chave_secreta_super_segura_trader_no_corre"
 
-# Senha padrão de acesso ao seu painel
+# Senha padrão de acesso ao seu painel /atualizar-dados 
 SENHA_DE_ACESSO = "123456"
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
