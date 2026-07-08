@@ -10,7 +10,7 @@ SENHA_DE_ACESSO = "123456"
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-def obtener_conexao():
+def obter_conexao():
     return psycopg2.connect(DATABASE_URL)
 
 # --- TELA DE LOGIN PREMIUM (TRADER NO CORRE) ---
@@ -108,7 +108,7 @@ PAINEL_HTML = """
                 <div class="card-label">Capital Flutuante (Equity)</div>
                 <div class="card-value">$ {{ dados.equidade }}</div>
             </div>
-            <div class="metric-card.danger">
+            <div class="metric-card {% if dados.aviso_drawdown %}danger{% else %}success{% endif %}">
                 <div class="card-label">Drawdown de Risco Atual</div>
                 <div class="card-value">{{ dados.drawdown }}%</div>
             </div>
@@ -163,9 +163,8 @@ def principal():
     cur.close()
     conn.close()
 
-    dados_atuais = {}
     if linha:
-        # Extrai cada coluna de forma limpa e separada
+        # Puxa cada índice numérico separadamente da tupla gerada pelo SQL
         v_saldo = float(linha[0])
         v_equi = float(linha[1])
         v_dd = float(linha[2])
@@ -179,7 +178,6 @@ def principal():
             "aviso_drawdown": v_dd > 4.5
         }
     else:
-        # Se o MT5 ainda não mandou nada, exibe valores zerados padrão de segurança
         dados_atuais = {
             "saldo": "0.00", 
             "equidade": "0.00", 
