@@ -218,7 +218,6 @@ TELA_DASHBOARD_HTML = """
 </body>
 </html>
 """
-
 @app.route('/atualizar-dados', methods=['POST'])
 def atualizar_dados():
     try:
@@ -261,33 +260,35 @@ def principal():
 
 @app.route('/dashboard/<numero_conta>')
 def dashboard_individual(numero_conta):
-if not session.get('logado'): return redirect('/')
-dados_finais = {"saldo": "0.00", "equidade": "0.00", "drawdown": "0.00", "perda_diaria": "0.00", "perda_maxima": "0.00", "lucro_hoje": "0.00"}
-try:
-conn = obter_conexao()
-cur = conn.cursor(cursor_factory=RealDictCursor)
-cur.execute("SELECT saldo, equidade, drawdown FROM metricas_conta WHERE conta = %s ORDER BY id DESC LIMIT 1", (numero_conta,))
-linha = cur.fetchone()
-cur.close()
-conn.close()
-if linha:
-v_saldo = float(linha['saldo'])
-v_equi = float(linha['equidade'])
-v_dd = float(linha['drawdown'])
-v_perda = v_saldo - v_equi
-if v_perda < 0: v_perda = 0.0
-dados_finais = {
-"saldo": f"{v_saldo:,.2f}", "equidade": f"{v_equi:,.2f}", "drawdown": f"{v_dd:.2f}",
-"perda_diaria": f"-{v_perda:.2f}" if v_perda > 0 else "0.00",
-"perda_maxima": f"-{v_perda:.2f}" if v_perda > 0 else "0.00",
-"lucro_hoje": f"-{v_perda:.2f}" if v_perda > 0 else "0.00"
-}
-except: pass
-return render_template_string(TELA_DASHBOARD_HTML, conta=numero_conta, dados=dados_finais)
+    if not session.get('logado'): return redirect('/')
+    dados_finais = {"saldo": "0.00", "equidade": "0.00", "drawdown": "0.00", "perda_diaria": "0.00", "perda_maxima": "0.00", "lucro_hoje": "0.00"}
+    try:
+        conn = obter_conexao()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT saldo, equidade, drawdown FROM metricas_conta WHERE conta = %s ORDER BY id DESC LIMIT 1", (numero_conta,))
+        linha = cur.fetchone()
+        cur.close()
+        conn.close()
+        if linha:
+            v_saldo = float(linha['saldo'])
+            v_equi = float(linha['equidade'])
+            v_dd = float(linha['drawdown'])
+            v_perda = v_saldo - v_equi
+            if v_perda < 0: v_perda = 0.0
+            dados_finais = {
+                "saldo": f"{v_saldo:,.2f}", "equidade": f"{v_equi:,.2f}", "drawdown": f"{v_dd:.2f}",
+                "perda_diaria": f"-{v_perda:.2f}" if v_perda > 0 else "0.00",
+                "perda_maxima": f"-{v_perda:.2f}" if v_perda > 0 else "0.00",
+                "lucro_hoje": f"-{v_perda:.2f}" if v_perda > 0 else "0.00"
+            }
+    except: pass
+    return render_template_string(TELA_DASHBOARD_HTML, conta=numero_conta, dados=dados_finais)
+
 @app.route('/logout')
 def logout():
-session.pop('logado', None)
-return redirect('/')
-if name == 'main':
-ajustar_banco()
-app.run(debug=True)
+    session.pop('logado', None)
+    return redirect('/')
+
+if __name__ == '__main__':
+    ajustar_banco()
+    app.run(debug=True)
